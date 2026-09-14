@@ -240,9 +240,7 @@ document.querySelector("#booking-form").addEventListener("submit", async (event)
     });
     const quote = await response.json();
     if (!response.ok) throw new Error(quote.error || "Unable to email payment instructions.");
-    const emailStatus = quote.sent
-      ? "<p>Payment instructions were emailed securely.</p>"
-      : `<p>${quote.emailError || "Email delivery is not configured yet. Save these instructions here."}</p>`;
+    const emailStatus = quote.sent ? "<p>Payment instructions were emailed securely.</p>" : "";
     const upiDetails = paymentMethod.value === "upi"
       ? `<div class="upi-payment"><img src="upi-qr.png" alt="Scan this QR code to pay by UPI" /><div><strong>Pay by UPI</strong><p>Scan or save this QR code, or send <b>₹${quote.amountInr.toLocaleString("en-IN")}</b> to <b>${quote.upiId}</b>.</p></div></div>`
       : "";
