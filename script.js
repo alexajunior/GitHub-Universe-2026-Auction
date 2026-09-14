@@ -245,7 +245,7 @@ document.querySelector("#booking-form").addEventListener("submit", async (event)
       ? `<div class="upi-payment"><img src="upi-qr.png" alt="Scan this QR code to pay by UPI" /><div><strong>Pay by UPI</strong><p>Scan or save this QR code, or send <b>₹${quote.amountInr.toLocaleString("en-IN")}</b> to <b>${quote.upiId}</b>.</p></div></div>`
       : "";
     const bankDetails = paymentMethod.value === "bank"
-      ? `<div class="upi-payment bank-payment"><div><strong>Pay by bank transfer</strong><p>Send <b>₹${quote.amountInr.toLocaleString("en-IN")}</b> using these details:</p><dl><div><dt>Bank</dt><dd>${quote.bankDetails.bankName}</dd></div><div><dt>Account holder</dt><dd>${quote.bankDetails.accountName}</dd></div><div><dt>Account number</dt><dd>${quote.bankDetails.accountNumber}</dd></div><div><dt>IFSC</dt><dd>${quote.bankDetails.ifsc}</dd></div></dl></div></div>`
+      ? `<div class="bank-payment"><div class="sbi-brand"><span class="sbi-logo" aria-hidden="true">SBI</span><div><strong>State Bank of India</strong><small>Bank transfer</small></div></div><p>Send <b>₹${quote.amountInr.toLocaleString("en-IN")}</b> using these details:</p><dl><div><dt>Bank</dt><dd>${quote.bankDetails.bankName}</dd></div><div><dt>Account holder</dt><dd>${quote.bankDetails.accountName}</dd></div><div><dt>Account number</dt><dd>${quote.bankDetails.accountNumber}</dd></div><div><dt>IFSC</dt><dd>${quote.bankDetails.ifsc}</dd></div></dl></div>`
       : "";
     paymentInstructions.innerHTML = `${emailStatus}<div class="payment-rate">Amount due: ₹${quote.amountInr.toLocaleString("en-IN")}</div>${upiDetails || bankDetails}`;
     paymentInstructions.hidden = false;
