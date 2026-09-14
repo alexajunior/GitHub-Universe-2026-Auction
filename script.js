@@ -42,6 +42,7 @@ const paymentInstructions = document.querySelector("#payment-instructions");
 const paymentOverlay = document.querySelector("#payment-overlay");
 const paymentOverlayContent = document.querySelector("#payment-overlay-content");
 const paymentOverlaySeconds = document.querySelector("#payment-overlay-seconds");
+const logoPlacements = document.querySelector("#logo-placements");
 const onlineCount = document.querySelector("#online-count");
 const visitorCount = document.querySelector("#visitor-count");
 const spotsCount = document.querySelector("#spots-count");
@@ -58,6 +59,7 @@ const legalCopy = document.querySelector("#legal-copy");
 let paymentOverlayTimer;
 let emailVerified = false;
 let verificationRequestedFor = "";
+let pendingPlacement = null;
 const publicBankDetails = {
   bankName: "State Bank of India",
   accountName: "Alex Junior Antwi",
@@ -341,17 +343,18 @@ document.querySelector("#booking-form").addEventListener("submit", async (event)
   try {
     const formData = new FormData(form);
     const email = String(formData.get("email")).trim().toLowerCase();
-    if (!emailVerified || verificationRequestedFor !== email) {
-      emailVerificationStatus.textContent = "Verify your email with the code before showing payment instructions.";
-      return;
-    }
+    const logoFile = formData.get("logo");
+    pendingPlacement = {
+      spotId: activeSpotId,
+      bid,
+      file: logoFile instanceof File && logoFile.size > 0 ? logoFile : null,
+    };
     if (paymentMethod.value === "bank") {
       const localQuote = { amountInr: Math.round(bid * 100), bankDetails: publicBankDetails };
       const localInstructions = `<div class="payment-rate">Amount due: ₹${localQuote.amountInr.toLocaleString("en-IN")}</div><div class="bank-payment"><div class="sbi-brand"><span class="sbi-logo" aria-hidden="true">SBI</span><div><strong>State Bank of India</strong><small>Bank transfer</small></div></div><p>Send <b>₹${localQuote.amountInr.toLocaleString("en-IN")}</b> using these details:</p><dl><div><dt>Bank</dt><dd>${localQuote.bankDetails.bankName}</dd></div><div><dt>Account holder</dt><dd>${localQuote.bankDetails.accountName}</dd></div><div><dt>Account number</dt><dd>${localQuote.bankDetails.accountNumber}</dd></div><div><dt>IFSC</dt><dd>${localQuote.bankDetails.ifsc}</dd></div></dl></div>`;
       paymentInstructions.innerHTML = localInstructions;
       paymentInstructions.hidden = false;
       showPaymentOverlay(localInstructions);
-      claimSpot(activeSpotId, bid);
       fetch(`${paymentApiUrl}/api/payment-instructions`, {
         body: JSON.stringify({
           spotId: activeSpotId,
@@ -373,7 +376,6 @@ document.querySelector("#booking-form").addEventListener("submit", async (event)
       paymentInstructions.innerHTML = localInstructions;
       paymentInstructions.hidden = false;
       showPaymentOverlay(localInstructions);
-      claimSpot(activeSpotId, bid);
       fetch(`${paymentApiUrl}/api/payment-instructions`, {
         body: JSON.stringify({
           spotId: activeSpotId,
@@ -416,7 +418,6 @@ document.querySelector("#booking-form").addEventListener("submit", async (event)
     paymentInstructions.innerHTML = renderedInstructions;
     paymentInstructions.hidden = false;
     showPaymentOverlay(renderedInstructions);
-    claimSpot(activeSpotId, bid);
   } catch (error) {
     paymentInstructions.innerHTML = `<div class="payment-rate">Instructions unavailable</div><p>${error.name === "TimeoutError" ? "The payment backend took too long to respond." : error.message}</p><p>Try again after the payment backend is configured.</p>`;
     paymentInstructions.hidden = false;
@@ -428,7 +429,8 @@ document.querySelector("#booking-form").addEventListener("submit", async (event)
 
 function showPaymentOverlay(instructions) {
   window.clearInterval(paymentOverlayTimer);
-  paymentOverlayContent.innerHTML = instructions;
+  paymentOverlayContent.innerHTML = `${instructions}<p class="payment-confirm-copy">After you complete the transfer, confirm it below to preview your logo on the shirt.</p><button class="button button-accent" id="confirm-payment-button" type="button">I have paid — show my logo <span>↗</span></button>`;
+  document.querySelector("#confirm-payment-button").addEventListener("click", confirmPaymentAndPlaceLogo);
   let seconds = 59;
   paymentOverlaySeconds.textContent = seconds;
   paymentOverlay.showModal();
@@ -440,6 +442,33 @@ function showPaymentOverlay(instructions) {
       paymentOverlay.close();
     }
   }, 1000);
+}
+
+function confirmPaymentAndPlaceLogo() {
+  if (!pendingPlacement) return;
+  const { spotId, bid, file } = pendingPlacement;
+  if (!file) {
+    paymentOverlayContent.insertAdjacentHTML("beforeend", "<p class=\"payment-error\">Please upload your logo before confirming payment.</p>");
+    return;
+  }
+  const zone = spotId === "back"
+    ? { x: .50, y: .72 }
+    : shirtZones.find((item) => item.id === spotId);
+  if (!zone) return;
+  const logo = document.createElement("img");
+  logo.className = "placed-logo";
+  logo.alt = "Confirmed sponsor logo";
+  logo.src = URL.createObjectURL(file);
+  logo.style.left = `${zone.x * 100}%`;
+  logo.style.top = `${zone.y * 100}%`;
+  logoPlacements.appendChild(logo);
+  document.querySelectorAll(`[data-spot="${spotId}"]`).forEach((item) => item.classList.add("sold"));
+  claimSpot(spotId, bid);
+  paymentOverlayContent.insertAdjacentHTML("beforeend", "<p class=\"payment-success\">Payment marked for review. Your logo is now previewed on the shirt.</p>");
+  const confirmButton = document.querySelector("#confirm-payment-button");
+  confirmButton.disabled = true;
+  confirmButton.textContent = "Logo placed on shirt";
+  pendingPlacement = null;
 }
 
 function claimSpot(spotId, amountUsd) {
