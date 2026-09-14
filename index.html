@@ -317,6 +317,12 @@
         <div class="payment-instructions" id="payment-instructions" hidden></div>
       </form>
     </dialog>
+    <dialog class="payment-overlay" id="payment-overlay">
+      <button class="modal-close payment-overlay-close" aria-label="Close payment instructions">×</button>
+      <div class="section-kicker">Payment instructions</div>
+      <div class="payment-overlay-countdown"><span id="payment-overlay-seconds">59</span>s</div>
+      <div id="payment-overlay-content"></div>
+    </dialog>
     <script src="script.js"></script>
   </body>
 </html>

@@ -33,6 +33,9 @@ const modalPrice = document.querySelector("#modal-price");
 const bidAmount = document.querySelector("#bid-amount");
 const paymentMethod = document.querySelector("#payment-method");
 const paymentInstructions = document.querySelector("#payment-instructions");
+const paymentOverlay = document.querySelector("#payment-overlay");
+const paymentOverlayContent = document.querySelector("#payment-overlay-content");
+const paymentOverlaySeconds = document.querySelector("#payment-overlay-seconds");
 const onlineCount = document.querySelector("#online-count");
 const visitorCount = document.querySelector("#visitor-count");
 const spotsCount = document.querySelector("#spots-count");
@@ -44,6 +47,7 @@ const paymentApiUrl = window.PAYMENT_API_URL || "http://localhost:8787";
 const legalModal = document.querySelector("#legal-modal");
 const legalTitle = document.querySelector("#legal-title");
 const legalCopy = document.querySelector("#legal-copy");
+let paymentOverlayTimer;
 
 document.querySelectorAll(".code-line").forEach((line, lineIndex) => {
   const text = line.dataset.text || "";
@@ -208,6 +212,10 @@ document.querySelector(".legal-close").addEventListener("click", () => legalModa
 legalModal.addEventListener("click", (event) => {
   if (event.target === legalModal) legalModal.close();
 });
+document.querySelector(".payment-overlay-close").addEventListener("click", () => paymentOverlay.close());
+paymentOverlay.addEventListener("click", (event) => {
+  if (event.target === paymentOverlay) paymentOverlay.close();
+});
 
 document.querySelector("#booking-form").addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -244,11 +252,14 @@ document.querySelector("#booking-form").addEventListener("submit", async (event)
     const upiDetails = paymentMethod.value === "upi"
       ? `<div class="upi-payment"><img src="upi-qr.png" alt="Scan this QR code to pay by UPI" /><div><strong>Pay by UPI</strong><p>Scan or save this QR code, or send <b>₹${quote.amountInr.toLocaleString("en-IN")}</b> to <b>${quote.upiId}</b>.</p></div></div>`
       : "";
+    const bank = quote.bankDetails || {};
     const bankDetails = paymentMethod.value === "bank"
-      ? `<div class="bank-payment"><div class="sbi-brand"><span class="sbi-logo" aria-hidden="true">SBI</span><div><strong>State Bank of India</strong><small>Bank transfer</small></div></div><p>Send <b>₹${quote.amountInr.toLocaleString("en-IN")}</b> using these details:</p><dl><div><dt>Bank</dt><dd>${quote.bankDetails.bankName}</dd></div><div><dt>Account holder</dt><dd>${quote.bankDetails.accountName}</dd></div><div><dt>Account number</dt><dd>${quote.bankDetails.accountNumber}</dd></div><div><dt>IFSC</dt><dd>${quote.bankDetails.ifsc}</dd></div></dl></div>`
+      ? `<div class="bank-payment"><div class="sbi-brand"><span class="sbi-logo" aria-hidden="true">SBI</span><div><strong>State Bank of India</strong><small>Bank transfer</small></div></div><p>Send <b>₹${quote.amountInr.toLocaleString("en-IN")}</b> using these details:</p><dl><div><dt>Bank</dt><dd>${bank.bankName || "State Bank of India"}</dd></div><div><dt>Account holder</dt><dd>${bank.accountName || "Alex Junior Antwi"}</dd></div><div><dt>Account number</dt><dd>${bank.accountNumber || "Contact campaign owner"}</dd></div><div><dt>IFSC</dt><dd>${bank.ifsc || "Contact campaign owner"}</dd></div></dl></div>`
       : "";
-    paymentInstructions.innerHTML = `${emailStatus}<div class="payment-rate">Amount due: ₹${quote.amountInr.toLocaleString("en-IN")}</div>${upiDetails || bankDetails}`;
+    const renderedInstructions = `${emailStatus}<div class="payment-rate">Amount due: ₹${quote.amountInr.toLocaleString("en-IN")}</div>${upiDetails || bankDetails}`;
+    paymentInstructions.innerHTML = renderedInstructions;
     paymentInstructions.hidden = false;
+    showPaymentOverlay(renderedInstructions);
     claimSpot(activeSpotId, bid);
   } catch (error) {
     paymentInstructions.innerHTML = `<div class="payment-rate">Instructions unavailable</div><p>${error.name === "TimeoutError" ? "The payment backend took too long to respond." : error.message}</p><p>Try again after the payment backend is configured.</p>`;
@@ -258,6 +269,22 @@ document.querySelector("#booking-form").addEventListener("submit", async (event)
     button.disabled = false;
   }
 });
+
+function showPaymentOverlay(instructions) {
+  window.clearInterval(paymentOverlayTimer);
+  paymentOverlayContent.innerHTML = instructions;
+  let seconds = 59;
+  paymentOverlaySeconds.textContent = seconds;
+  paymentOverlay.showModal();
+  paymentOverlayTimer = window.setInterval(() => {
+    seconds -= 1;
+    paymentOverlaySeconds.textContent = seconds;
+    if (seconds <= 0) {
+      window.clearInterval(paymentOverlayTimer);
+      paymentOverlay.close();
+    }
+  }, 1000);
+}
 
 function claimSpot(spotId, amountUsd) {
   if (!claimedSpotIds.has(spotId)) {
