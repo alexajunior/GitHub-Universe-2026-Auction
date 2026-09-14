@@ -50,6 +50,7 @@ let activeSpotId = null;
 let bookingScrollY = 0;
 bidAmount.addEventListener("input", () => bidAmount.setCustomValidity(""));
 const paymentApiUrl = window.PAYMENT_API_URL || "https://github-universe-2026-auction.onrender.com";
+const backendTimeoutMs = 30000;
 const legalModal = document.querySelector("#legal-modal");
 const legalTitle = document.querySelector("#legal-title");
 const legalCopy = document.querySelector("#legal-copy");
@@ -85,7 +86,7 @@ async function requestEmailVerification() {
       body: JSON.stringify({ email }),
       headers: { "Content-Type": "application/json" },
       method: "POST",
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(backendTimeoutMs),
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || "Unable to send verification code.");
@@ -315,7 +316,7 @@ document.querySelector("#booking-form").addEventListener("submit", async (event)
           body: JSON.stringify({ email, code: verificationCode.value }),
           headers: { "Content-Type": "application/json" },
           method: "POST",
-          signal: AbortSignal.timeout(10000),
+          signal: AbortSignal.timeout(backendTimeoutMs),
         });
         const verificationResult = await verificationResponse.json();
         if (!verificationResponse.ok) throw new Error(verificationResult.error || "Email verification failed.");
@@ -342,7 +343,7 @@ document.querySelector("#booking-form").addEventListener("submit", async (event)
         }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(backendTimeoutMs),
       }).catch((error) => console.error("Payment instruction email request failed:", error));
       return;
     }
@@ -364,7 +365,7 @@ document.querySelector("#booking-form").addEventListener("submit", async (event)
         }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(backendTimeoutMs),
       }).catch((error) => console.error("Payment instruction email request failed:", error));
       return;
     }
@@ -379,7 +380,7 @@ document.querySelector("#booking-form").addEventListener("submit", async (event)
       }),
       headers: { "Content-Type": "application/json" },
       method: "POST",
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(backendTimeoutMs),
     });
     const quote = await response.json();
     if (!response.ok) throw new Error(quote.error || "Unable to email payment instructions.");
