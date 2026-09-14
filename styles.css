@@ -8,6 +8,7 @@
   --serif: Georgia, "Times New Roman", serif;
 }
 * { box-sizing: border-box; }
+html, body { max-width: 100%; overflow-x: hidden; }
 html { scroll-behavior: smooth; }
 body { margin: 0; background: #ffffff; color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }
 a { color: inherit; text-decoration: none; }
@@ -226,10 +227,11 @@ h2 span { color: #2da44e; font-family: "DM Mono", monospace; font-style: normal;
 .live-badge .pulse { background: #3fb950; box-shadow: 0 0 0 4px rgba(63, 185, 80, .14); height: 6px; width: 6px; }
 .auction-head strong { font-weight: 400; }
 .auction-head strong span { color: #cf222e; }
-.spot-row { align-items: center; background: none; border: 0; border-bottom: 1px solid #d6d5cf; color: var(--ink); cursor: pointer; display: grid; gap: 16px; grid-template-columns: 30px 1fr auto 20px; padding: 22px 0; text-align: left; transition: padding .2s; width: 100%; }
+.spot-row { align-items: center; background: none; border: 0; border-bottom: 1px solid #d6d5cf; color: var(--ink); cursor: pointer; display: grid; gap: 16px; grid-template-columns: 30px minmax(0, 1fr) auto 20px; min-width: 0; padding: 22px 0; text-align: left; transition: padding .2s; width: 100%; }
 .spot-row:hover { padding-left: 10px; }
 .spot-row strong, .spot-row small { display: block; }
 .spot-row small { color: #8a9099; font-size: 11px; margin-top: 5px; }
+.spot-row > span:nth-child(2), .spot-row > span:nth-child(2) * { min-width: 0; overflow-wrap: anywhere; }
 .spot-row small i { color: #2da44e; font-style: normal; }
 .spot-row b { font-size: 13px; font-weight: 500; }
 .spot-letter { align-items: center; border: 1px solid #b9b9b3; border-radius: 50%; display: flex; font-family: "DM Mono", monospace; font-size: 11px; height: 27px; justify-content: center; width: 27px; }
@@ -260,6 +262,7 @@ h2 span { color: #2da44e; font-family: "DM Mono", monospace; font-style: normal;
 .legal-modal h2 { font: 28px "DM Mono", monospace; margin: 30px 0 18px; text-transform: uppercase; }
 .legal-modal p { color: #57606a; font-size: 15px; line-height: 1.65; margin: 0; }
 .booking-modal { background: var(--paper); border: 0; color: var(--ink); max-width: 460px; padding: 50px; width: calc(100% - 30px); }
+.booking-modal, .payment-overlay, .legal-modal { max-height: calc(100dvh - 24px); overflow-y: auto; overscroll-behavior: contain; }
 .booking-modal::backdrop { background: rgba(6, 12, 25, .75); backdrop-filter: blur(5px); }
 .modal-close { background: none; border: 0; cursor: pointer; font-size: 28px; position: absolute; right: 18px; top: 12px; }
 .booking-modal h2 { font-size: 50px; margin: 30px 0 15px; }
@@ -308,5 +311,14 @@ h2 span { color: #2da44e; font-family: "DM Mono", monospace; font-style: normal;
   .footer-bottom { align-items: start; flex-direction: column; gap: 13px; }
   .social-links { flex-wrap: wrap; gap: 15px; }
   .footer-top { align-items: start; flex-direction: column; gap: 22px; }
-  .booking-modal { padding: 38px 25px; }
+  .booking-modal, .payment-overlay, .legal-modal { padding: 32px 20px; width: calc(100% - 20px); }
+  .booking-modal h2 { font-size: clamp(32px, 11vw, 50px); overflow-wrap: anywhere; }
+  .booking-modal p, .payment-overlay p, .legal-modal p { overflow-wrap: anywhere; }
+  .payment-overlay-countdown { font-size: 34px; }
+  .payment-overlay #payment-overlay-content { padding: 12px; }
+  .upi-payment { align-items: flex-start; flex-direction: column; }
+  .payment-instructions dl > div { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .payment-instructions dd { text-align: left; }
+  .sbi-brand { min-width: 0; }
+  .sbi-brand strong { overflow-wrap: anywhere; }
 }

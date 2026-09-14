@@ -42,6 +42,7 @@ const spotsCount = document.querySelector("#spots-count");
 const fundingProgressFill = document.querySelector(".funding-progress-fill");
 const fundingNote = document.querySelector(".funding-note");
 let activeSpotId = null;
+let bookingScrollY = 0;
 bidAmount.addEventListener("input", () => bidAmount.setCustomValidity(""));
 const paymentApiUrl = window.PAYMENT_API_URL || "http://localhost:8787";
 const legalModal = document.querySelector("#legal-modal");
@@ -116,6 +117,7 @@ function openBooking(spotId) {
   const spot = spots[spotId];
   if (!spot) return;
   activeSpotId = spotId;
+  bookingScrollY = window.scrollY;
   modalTitle.textContent = spot.title;
   modalDescription.textContent = spot.description;
   const isPremium = spotId === "back";
@@ -201,9 +203,15 @@ document.querySelectorAll(".view-button").forEach((button) => {
   });
 });
 
-document.querySelector(".modal-close").addEventListener("click", () => modal.close());
+function closeBooking() {
+  if (paymentOverlay.open) paymentOverlay.close();
+  if (modal.open) modal.close();
+  window.requestAnimationFrame(() => window.scrollTo(0, bookingScrollY));
+}
+
+document.querySelector("#booking-modal .modal-close").addEventListener("click", closeBooking);
 modal.addEventListener("click", (event) => {
-  if (event.target === modal) modal.close();
+  if (event.target === modal) closeBooking();
 });
 
 document.querySelectorAll("[data-policy]").forEach((button) => {
@@ -219,9 +227,9 @@ document.querySelector(".legal-close").addEventListener("click", () => legalModa
 legalModal.addEventListener("click", (event) => {
   if (event.target === legalModal) legalModal.close();
 });
-document.querySelector(".payment-overlay-close").addEventListener("click", () => paymentOverlay.close());
+document.querySelector(".payment-overlay-close").addEventListener("click", closeBooking);
 paymentOverlay.addEventListener("click", (event) => {
-  if (event.target === paymentOverlay) paymentOverlay.close();
+  if (event.target === paymentOverlay) closeBooking();
 });
 
 document.querySelector("#booking-form").addEventListener("submit", async (event) => {
