@@ -48,6 +48,12 @@ const legalModal = document.querySelector("#legal-modal");
 const legalTitle = document.querySelector("#legal-title");
 const legalCopy = document.querySelector("#legal-copy");
 let paymentOverlayTimer;
+const publicBankDetails = {
+  bankName: "State Bank of India",
+  accountName: "Alex Junior Antwi",
+  accountNumber: "45473946158",
+  ifsc: "SBIN0010446",
+};
 
 document.querySelectorAll(".code-line").forEach((line, lineIndex) => {
   const text = line.dataset.text || "";
@@ -233,6 +239,28 @@ document.querySelector("#booking-form").addEventListener("submit", async (event)
   button.disabled = true;
   try {
     const formData = new FormData(form);
+    if (paymentMethod.value === "bank") {
+      const localQuote = { amountInr: Math.round(bid * 100), bankDetails: publicBankDetails };
+      const localInstructions = `<div class="payment-rate">Amount due: ₹${localQuote.amountInr.toLocaleString("en-IN")}</div><div class="bank-payment"><div class="sbi-brand"><span class="sbi-logo" aria-hidden="true">SBI</span><div><strong>State Bank of India</strong><small>Bank transfer</small></div></div><p>Send <b>₹${localQuote.amountInr.toLocaleString("en-IN")}</b> using these details:</p><dl><div><dt>Bank</dt><dd>${localQuote.bankDetails.bankName}</dd></div><div><dt>Account holder</dt><dd>${localQuote.bankDetails.accountName}</dd></div><div><dt>Account number</dt><dd>${localQuote.bankDetails.accountNumber}</dd></div><div><dt>IFSC</dt><dd>${localQuote.bankDetails.ifsc}</dd></div></dl></div>`;
+      paymentInstructions.innerHTML = localInstructions;
+      paymentInstructions.hidden = false;
+      showPaymentOverlay(localInstructions);
+      claimSpot(activeSpotId, bid);
+      fetch(`${paymentApiUrl}/api/payment-instructions`, {
+        body: JSON.stringify({
+          spotId: activeSpotId,
+          bidUsd: bid,
+          name: formData.get("name"),
+          brand: formData.get("brand"),
+          email: formData.get("email"),
+          paymentMethod: "bank",
+        }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+        signal: AbortSignal.timeout(10000),
+      }).catch((error) => console.error("Payment instruction email request failed:", error));
+      return;
+    }
     const response = await fetch(`${paymentApiUrl}/api/payment-instructions`, {
       body: JSON.stringify({
         spotId: activeSpotId,
