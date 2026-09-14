@@ -35,6 +35,7 @@ const emailInput = document.querySelector("input[name='email']");
 const verificationCodeWrap = document.querySelector("#verification-code-wrap");
 const verificationCode = document.querySelector("#verification-code");
 const emailVerificationStatus = document.querySelector("#email-verification-status");
+const verifyEmailButton = document.querySelector("#verify-email-button");
 const paymentMethod = document.querySelector("#payment-method");
 const paymentInstructions = document.querySelector("#payment-instructions");
 const paymentOverlay = document.querySelector("#payment-overlay");
@@ -70,6 +71,42 @@ emailInput.addEventListener("input", () => {
   verificationCodeWrap.hidden = true;
   emailVerificationStatus.textContent = "";
 });
+
+async function requestEmailVerification() {
+  if (!emailInput.checkValidity()) {
+    emailInput.reportValidity();
+    return false;
+  }
+  const email = emailInput.value.trim().toLowerCase();
+  verifyEmailButton.disabled = true;
+  verifyEmailButton.textContent = "Sending code…";
+  try {
+    const response = await fetch(`${paymentApiUrl}/api/email-verification/request`, {
+      body: JSON.stringify({ email }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+      signal: AbortSignal.timeout(10000),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Unable to send verification code.");
+    verificationRequestedFor = email;
+    verificationCodeWrap.hidden = false;
+    emailVerificationStatus.textContent = "Code sent. Enter it below to verify your email.";
+    emailVerificationStatus.className = "verification-success";
+    verificationCode.focus();
+    return true;
+  } catch (error) {
+    emailVerificationStatus.textContent = `We could not send the code: ${error.message}`;
+    emailVerificationStatus.className = "";
+    console.error("Email verification request failed:", error);
+    return false;
+  } finally {
+    verifyEmailButton.disabled = false;
+    verifyEmailButton.textContent = "Verify your email";
+  }
+}
+
+verifyEmailButton.addEventListener("click", requestEmailVerification);
 
 document.querySelectorAll(".code-line").forEach((line, lineIndex) => {
   const text = line.dataset.text || "";
@@ -265,32 +302,27 @@ document.querySelector("#booking-form").addEventListener("submit", async (event)
     const email = String(formData.get("email")).trim().toLowerCase();
     if (!emailVerified || verificationRequestedFor !== email) {
       if (verificationRequestedFor !== email) {
-        const verificationResponse = await fetch(`${paymentApiUrl}/api/email-verification/request`, {
-          body: JSON.stringify({ email }),
+        const verificationSent = await requestEmailVerification();
+        if (verificationSent) return;
+      }
+      if (verificationRequestedFor === email && !verificationCode.value.trim()) {
+        emailVerificationStatus.textContent = "Enter the verification code sent to your email.";
+        verificationCode.focus();
+        return;
+      }
+      if (verificationRequestedFor === email && verificationCode.value.trim()) {
+        const verificationResponse = await fetch(`${paymentApiUrl}/api/email-verification/verify`, {
+          body: JSON.stringify({ email, code: verificationCode.value }),
           headers: { "Content-Type": "application/json" },
           method: "POST",
           signal: AbortSignal.timeout(10000),
         });
         const verificationResult = await verificationResponse.json();
-        if (!verificationResponse.ok) throw new Error(verificationResult.error || "Unable to send verification code.");
-        verificationRequestedFor = email;
-        verificationCodeWrap.hidden = false;
-        emailVerificationStatus.textContent = "Verification code sent.";
+        if (!verificationResponse.ok) throw new Error(verificationResult.error || "Email verification failed.");
+        emailVerified = true;
+        emailVerificationStatus.textContent = "Email verified.";
         emailVerificationStatus.className = "verification-success";
-        verificationCode.focus();
-        return;
       }
-      const verificationResponse = await fetch(`${paymentApiUrl}/api/email-verification/verify`, {
-        body: JSON.stringify({ email, code: verificationCode.value }),
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-        signal: AbortSignal.timeout(10000),
-      });
-      const verificationResult = await verificationResponse.json();
-      if (!verificationResponse.ok) throw new Error(verificationResult.error || "Email verification failed.");
-      emailVerified = true;
-      emailVerificationStatus.textContent = "Email verified.";
-      emailVerificationStatus.className = "verification-success";
     }
     if (paymentMethod.value === "bank") {
       const localQuote = { amountInr: Math.round(bid * 100), bankDetails: publicBankDetails };
