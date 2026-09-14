@@ -221,7 +221,7 @@ document.querySelector("#booking-form").addEventListener("submit", async (event)
   bidAmount.setCustomValidity("");
   const button = event.currentTarget.querySelector("button[type='submit']");
   const form = event.currentTarget;
-  button.textContent = "Preparing INR amount…";
+  button.textContent = "Preparing payment instructions…";
   button.disabled = true;
   try {
     const formData = new FormData(form);
@@ -240,15 +240,20 @@ document.querySelector("#booking-form").addEventListener("submit", async (event)
     });
     const quote = await response.json();
     if (!response.ok) throw new Error(quote.error || "Unable to email payment instructions.");
-    const emailStatus = quote.sent ? `<strong>Check ${formData.get("email")}</strong><p>Payment instructions were emailed securely.</p>` : "";
+    const emailStatus = quote.sent
+      ? "<p>Payment instructions were emailed securely.</p>"
+      : `<p>${quote.emailError || "Email delivery is not configured yet. Save these instructions here."}</p>`;
     const upiDetails = paymentMethod.value === "upi"
       ? `<div class="upi-payment"><img src="upi-qr.png" alt="Scan this QR code to pay by UPI" /><div><strong>Pay by UPI</strong><p>Scan or save this QR code, or send <b>₹${quote.amountInr.toLocaleString("en-IN")}</b> to <b>${quote.upiId}</b>.</p></div></div>`
       : "";
-    paymentInstructions.innerHTML = `<div class="payment-rate">₹${quote.amountInr.toLocaleString("en-IN")} · ₹100 / USD</div>${emailStatus}${upiDetails || "<p>Bank-transfer details are sent to your email after approval.</p>"}`;
+    const bankDetails = paymentMethod.value === "bank"
+      ? `<div class="upi-payment bank-payment"><div><strong>Pay by bank transfer</strong><p>Send <b>₹${quote.amountInr.toLocaleString("en-IN")}</b> using these details:</p><dl><div><dt>Bank</dt><dd>${quote.bankDetails.bankName}</dd></div><div><dt>Account holder</dt><dd>${quote.bankDetails.accountName}</dd></div><div><dt>Account number</dt><dd>${quote.bankDetails.accountNumber}</dd></div><div><dt>IFSC</dt><dd>${quote.bankDetails.ifsc}</dd></div></dl></div></div>`
+      : "";
+    paymentInstructions.innerHTML = `${emailStatus}<div class="payment-rate">Amount due: ₹${quote.amountInr.toLocaleString("en-IN")}</div>${upiDetails || bankDetails}`;
     paymentInstructions.hidden = false;
     claimSpot(activeSpotId, bid);
   } catch (error) {
-    paymentInstructions.innerHTML = `<div class="payment-rate">Email not sent</div><p>${error.name === "TimeoutError" ? "The payment backend took too long to respond." : error.message}</p><p>Try again after the payment backend is configured.</p>`;
+    paymentInstructions.innerHTML = `<div class="payment-rate">Instructions unavailable</div><p>${error.name === "TimeoutError" ? "The payment backend took too long to respond." : error.message}</p><p>Try again after the payment backend is configured.</p>`;
     paymentInstructions.hidden = false;
   } finally {
     button.textContent = "Show payment instructions ↗";

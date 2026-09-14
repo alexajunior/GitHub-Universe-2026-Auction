@@ -25,4 +25,4 @@ The site uses GitHub Pages for the frontend and a Node API for private payment i
 3. For production, deploy `server.js` to Render, Railway, Fly.io, or another Node host. Set `FRONTEND_ORIGIN` to your GitHub Pages URL.
 4. Before publishing, set `window.PAYMENT_API_URL` to the deployed API URL, or replace the default localhost URL in `script.js`.
 
-The API uses the campaign rate of ₹100 per USD and emails bank-transfer instructions. The public frontend shows only the supplied UPI QR code and UPI ID; it never receives bank account details. Confirm every manual payment before approving a placement. Never commit `.env` or the Gmail app password.
+The API calculates the INR amount, displays either UPI or bank-transfer instructions in the frontend, and automatically emails the same instructions to the submitted address when SMTP is configured. Confirm every manual payment before approving a placement. Never commit `.env` or the Gmail app password.

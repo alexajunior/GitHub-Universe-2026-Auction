@@ -42,17 +42,35 @@ app.post("/api/payment-instructions", async (request, response) => {
     const paymentDetails = paymentMethod === "upi"
       ? `UPI ID: ${process.env.UPI_ID || "not configured"}`
       : `Bank: ${process.env.BANK_NAME || "not configured"}\nAccount holder: ${process.env.BANK_ACCOUNT_NAME || "not configured"}\nAccount number: ${process.env.BANK_ACCOUNT_NUMBER || "not configured"}\nIFSC: ${process.env.BANK_IFSC || "not configured"}`;
+    let sent = false;
+    let emailError;
     if (smtpTransport) {
-      await smtpTransport.sendMail({
-        from: campaignEmail,
-        to: email,
-        subject: `Payment instructions · ${brand} · ${spotId}`,
-        text: `Hello ${name},\n\nYour placement request for ${brand} is recorded.\nPlacement: ${spotId}\nBid: $${amountUsd.toLocaleString("en-US")}\nAmount due: ₹${amountInr.toLocaleString("en-IN")}\nRate: ₹${rate.toFixed(2)} / USD\n\n${paymentDetails}\n\nPlease send your payment confirmation and logo details after transfer. Your placement is not confirmed until payment is reviewed.\n\nAlex Junior Antwi / Braveon AI`,
-      });
-    } else if (paymentMethod === "bank") {
-      return response.status(503).json({ error: "Bank-transfer email delivery is not configured yet." });
+      try {
+        await smtpTransport.sendMail({
+          from: campaignEmail,
+          to: email,
+          subject: `Payment instructions · ${brand} · ${spotId}`,
+          text: `Hello ${name},\n\nYour placement request for ${brand} is recorded.\nPlacement: ${spotId}\nBid: $${amountUsd.toLocaleString("en-US")}\nAmount due: ₹${amountInr.toLocaleString("en-IN")}\n\n${paymentDetails}\n\nPlease send your payment confirmation and logo details after transfer. Your placement is not confirmed until payment is reviewed.\n\nAlex Junior Antwi / Braveon AI`,
+        });
+        sent = true;
+      } catch (error) {
+        console.error("Payment instruction email failed:", error);
+        emailError = "Email delivery failed, but the instructions are shown below.";
+      }
     }
-    return response.json({ sent: Boolean(smtpTransport), amountUsd, amountInr, rate, upiId: paymentMethod === "upi" ? process.env.UPI_ID : undefined });
+    return response.json({
+      sent,
+      emailError,
+      amountUsd,
+      amountInr,
+      upiId: paymentMethod === "upi" ? process.env.UPI_ID : undefined,
+      bankDetails: paymentMethod === "bank" ? {
+       bankName: process.env.BANK_NAME || "not configured",
+       accountName: process.env.BANK_ACCOUNT_NAME || "not configured",
+       accountNumber: process.env.BANK_ACCOUNT_NUMBER || "not configured",
+       ifsc: process.env.BANK_IFSC || "not configured",
+      } : undefined,
+    });
   } catch (error) {
     console.error(error);
     return response.status(502).json({ error: "Unable to send payment instructions." });
