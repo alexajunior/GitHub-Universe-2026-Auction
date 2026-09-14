@@ -1,5 +1,4 @@
 import "dotenv/config";
-import crypto from "node:crypto";
 import express from "express";
 import cors from "cors";
 import nodemailer from "nodemailer";
@@ -17,7 +16,7 @@ const smtpTransport = process.env.SMTP_APP_PASSWORD && !process.env.SMTP_APP_PAS
       socketTimeout: 15000,
     })
   : null;
-const verificationCodes = new Map();
+const contactSubmissions = [];
 app.use(cors({ origin: frontendOrigin }));
 app.use(express.json({ limit: "100kb" }));
 
@@ -25,45 +24,21 @@ app.get("/health", (_request, response) => {
   response.json({ ok: true, emailVerificationConfigured: Boolean(smtpTransport) });
 });
 
-app.post("/api/email-verification/request", async (request, response) => {
-  const { email } = request.body || {};
+app.post("/api/contact-submissions", (request, response) => {
+  const { name, brand, email, spotId, bidUsd } = request.body || {};
   if (typeof email !== "string" || !email.includes("@")) {
     return response.status(400).json({ error: "Enter a valid email address." });
   }
-  if (!smtpTransport) {
-    return response.status(503).json({ error: "Email verification is not configured yet." });
-  }
-  const code = String(crypto.randomInt(100000, 1000000));
-  verificationCodes.set(email.toLowerCase(), { code, expiresAt: Date.now() + 10 * 60 * 1000, attempts: 0 });
-  try {
-    await smtpTransport.sendMail({
-      from: campaignEmail,
-      to: email,
-      subject: "Verify your email · GitHub Universe 2026",
-      text: `Your verification code is ${code}. It expires in 10 minutes.`,
-    });
-    return response.json({ sent: true });
-  } catch (error) {
-    verificationCodes.delete(email.toLowerCase());
-    console.error("Verification email failed:", error);
-    return response.status(502).json({ error: "Unable to send the verification code." });
-  }
-});
-
-app.post("/api/email-verification/verify", (request, response) => {
-  const { email, code } = request.body || {};
-  const key = typeof email === "string" ? email.toLowerCase() : "";
-  const record = verificationCodes.get(key);
-  if (!record || Date.now() > record.expiresAt || record.attempts >= 5) {
-    verificationCodes.delete(key);
-    return response.status(400).json({ error: "That verification code is invalid or expired." });
-  }
-  record.attempts += 1;
-  if (record.code !== String(code || "").trim()) {
-    return response.status(400).json({ error: "That verification code is incorrect." });
-  }
-  verificationCodes.delete(key);
-  return response.json({ verified: true });
+  contactSubmissions.push({
+    name: typeof name === "string" ? name.trim() : "",
+    brand: typeof brand === "string" ? brand.trim() : "",
+    email: email.trim().toLowerCase(),
+    spotId: typeof spotId === "string" ? spotId : "",
+    bidUsd: Number(bidUsd),
+    submittedAt: new Date().toISOString(),
+  });
+  console.log("Contact submission received:", email.trim().toLowerCase());
+  return response.json({ saved: true });
 });
 
 function getUsdInrRate() {
