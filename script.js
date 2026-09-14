@@ -54,6 +54,7 @@ const publicBankDetails = {
   accountNumber: "45473946158",
   ifsc: "SBIN0010446",
 };
+const publicUpiId = "8796332176@upi";
 
 document.querySelectorAll(".code-line").forEach((line, lineIndex) => {
   const text = line.dataset.text || "";
@@ -254,6 +255,28 @@ document.querySelector("#booking-form").addEventListener("submit", async (event)
           brand: formData.get("brand"),
           email: formData.get("email"),
           paymentMethod: "bank",
+        }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+        signal: AbortSignal.timeout(10000),
+      }).catch((error) => console.error("Payment instruction email request failed:", error));
+      return;
+    }
+    if (paymentMethod.value === "upi") {
+      const localQuote = { amountInr: Math.round(bid * 100), upiId: publicUpiId };
+      const localInstructions = `<div class="payment-rate">Amount due: ₹${localQuote.amountInr.toLocaleString("en-IN")}</div><div class="upi-payment"><img src="upi-qr.png" alt="Scan this QR code to pay by UPI" /><div><strong>Pay by UPI</strong><p>Scan or save this QR code, or send <b>₹${localQuote.amountInr.toLocaleString("en-IN")}</b> to <b>${localQuote.upiId}</b>.</p></div></div>`;
+      paymentInstructions.innerHTML = localInstructions;
+      paymentInstructions.hidden = false;
+      showPaymentOverlay(localInstructions);
+      claimSpot(activeSpotId, bid);
+      fetch(`${paymentApiUrl}/api/payment-instructions`, {
+        body: JSON.stringify({
+          spotId: activeSpotId,
+          bidUsd: bid,
+          name: formData.get("name"),
+          brand: formData.get("brand"),
+          email: formData.get("email"),
+          paymentMethod: "upi",
         }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
