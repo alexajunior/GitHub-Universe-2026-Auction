@@ -12,11 +12,18 @@ const smtpTransport = process.env.SMTP_APP_PASSWORD && !process.env.SMTP_APP_PAS
   ? nodemailer.createTransport({
       service: "gmail",
       auth: { user: campaignEmail, pass: process.env.SMTP_APP_PASSWORD },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
     })
   : null;
 const verificationCodes = new Map();
 app.use(cors({ origin: frontendOrigin }));
 app.use(express.json({ limit: "100kb" }));
+
+app.get("/health", (_request, response) => {
+  response.json({ ok: true, emailVerificationConfigured: Boolean(smtpTransport) });
+});
 
 app.post("/api/email-verification/request", async (request, response) => {
   const { email } = request.body || {};

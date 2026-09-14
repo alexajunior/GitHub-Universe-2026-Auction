@@ -36,6 +36,7 @@ const verificationCodeWrap = document.querySelector("#verification-code-wrap");
 const verificationCode = document.querySelector("#verification-code");
 const emailVerificationStatus = document.querySelector("#email-verification-status");
 const verifyEmailButton = document.querySelector("#verify-email-button");
+const confirmEmailButton = document.querySelector("#confirm-email-button");
 const paymentMethod = document.querySelector("#payment-method");
 const paymentInstructions = document.querySelector("#payment-instructions");
 const paymentOverlay = document.querySelector("#payment-overlay");
@@ -69,8 +70,8 @@ emailInput.addEventListener("input", () => {
   emailVerified = false;
   verificationRequestedFor = "";
   verificationCode.value = "";
-  verificationCodeWrap.hidden = true;
-  emailVerificationStatus.textContent = "";
+  emailVerificationStatus.textContent = "Enter your email, then send a verification code.";
+  emailVerificationStatus.className = "";
 });
 
 async function requestEmailVerification() {
@@ -108,6 +109,45 @@ async function requestEmailVerification() {
 }
 
 verifyEmailButton.addEventListener("click", requestEmailVerification);
+
+async function confirmEmailVerification() {
+  const email = emailInput.value.trim().toLowerCase();
+  if (!emailInput.checkValidity()) {
+    emailInput.reportValidity();
+    return;
+  }
+  if (verificationRequestedFor !== email) {
+    emailVerificationStatus.textContent = "Send a verification code first.";
+    return;
+  }
+  if (!verificationCode.value.trim()) {
+    verificationCode.reportValidity();
+    emailVerificationStatus.textContent = "Enter the verification code sent to your email.";
+    return;
+  }
+  confirmEmailButton.disabled = true;
+  try {
+    const response = await fetch(`${paymentApiUrl}/api/email-verification/verify`, {
+      body: JSON.stringify({ email, code: verificationCode.value }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+      signal: AbortSignal.timeout(backendTimeoutMs),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Email verification failed.");
+    emailVerified = true;
+    emailVerificationStatus.textContent = "Email verified successfully.";
+    emailVerificationStatus.className = "verification-success";
+    confirmEmailButton.textContent = "Email verified";
+  } catch (error) {
+    emailVerificationStatus.textContent = `Verification failed: ${error.message}`;
+    console.error("Email verification failed:", error);
+  } finally {
+    confirmEmailButton.disabled = false;
+  }
+}
+
+confirmEmailButton.addEventListener("click", confirmEmailVerification);
 
 document.querySelectorAll(".code-line").forEach((line, lineIndex) => {
   const text = line.dataset.text || "";
@@ -302,28 +342,8 @@ document.querySelector("#booking-form").addEventListener("submit", async (event)
     const formData = new FormData(form);
     const email = String(formData.get("email")).trim().toLowerCase();
     if (!emailVerified || verificationRequestedFor !== email) {
-      if (verificationRequestedFor !== email) {
-        const verificationSent = await requestEmailVerification();
-        if (verificationSent) return;
-      }
-      if (verificationRequestedFor === email && !verificationCode.value.trim()) {
-        emailVerificationStatus.textContent = "Enter the verification code sent to your email.";
-        verificationCode.focus();
-        return;
-      }
-      if (verificationRequestedFor === email && verificationCode.value.trim()) {
-        const verificationResponse = await fetch(`${paymentApiUrl}/api/email-verification/verify`, {
-          body: JSON.stringify({ email, code: verificationCode.value }),
-          headers: { "Content-Type": "application/json" },
-          method: "POST",
-          signal: AbortSignal.timeout(backendTimeoutMs),
-        });
-        const verificationResult = await verificationResponse.json();
-        if (!verificationResponse.ok) throw new Error(verificationResult.error || "Email verification failed.");
-        emailVerified = true;
-        emailVerificationStatus.textContent = "Email verified.";
-        emailVerificationStatus.className = "verification-success";
-      }
+      emailVerificationStatus.textContent = "Verify your email with the code before showing payment instructions.";
+      return;
     }
     if (paymentMethod.value === "bank") {
       const localQuote = { amountInr: Math.round(bid * 100), bankDetails: publicBankDetails };
