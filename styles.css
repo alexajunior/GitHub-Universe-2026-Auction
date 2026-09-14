@@ -201,6 +201,7 @@ h2 span { color: #2da44e; font-family: "DM Mono", monospace; font-style: normal;
 .section-heading { align-items: end; display: flex; justify-content: space-between; }
 .section-heading h2 { margin: 45px 0 0; }
 .section-heading p { color: #69707c; font-size: 15px; line-height: 1.5; max-width: 260px; }
+.payment-print-note { border-left: 3px solid var(--acid); color: #57606a; font-family: "DM Mono", monospace; font-size: 11px; line-height: 1.5; margin: 30px 0 0; max-width: 620px; padding-left: 12px; text-transform: uppercase; }
 .spots-layout { display: grid; gap: 8vw; grid-template-columns: 1fr 1fr; margin-top: 85px; }
 .jacket-stage { background: #d0d7de; min-height: 560px; overflow: hidden; perspective: 1200px; position: relative; }
 .jacket-stage img { backface-visibility: hidden; filter: contrast(1.03); height: 100%; mix-blend-mode: multiply; object-fit: cover; object-position: center top; opacity: .9; transform-origin: center; width: 100%; }
@@ -208,7 +209,7 @@ h2 span { color: #2da44e; font-family: "DM Mono", monospace; font-style: normal;
 @keyframes shirt-fold { 0% { transform: rotateY(0) scaleX(1); } 45% { transform: rotateY(78deg) scaleX(.7); } 100% { transform: rotateY(0) scaleX(1); } }
 .placement-image { cursor: crosshair; touch-action: manipulation; }
 .logo-placements { inset: 0; pointer-events: none; position: absolute; }
-.placed-logo { background: #ffffff; border: 2px solid #ffffff; border-radius: 4px; box-shadow: 0 3px 12px rgba(13, 17, 23, .3); height: clamp(28px, 7vw, 58px); max-width: 18%; object-fit: contain; padding: 3px; position: absolute; transform: translate(-50%, -50%); width: clamp(28px, 7vw, 58px); z-index: 3; }
+.placed-logo { aspect-ratio: 1; background: #ffffff; border: 2px solid #ffffff; border-radius: 4px; box-shadow: 0 3px 12px rgba(13, 17, 23, .3); height: 42px; max-width: none; object-fit: contain; padding: 3px; position: absolute; transform: translate(-50%, -50%); width: 42px; z-index: 3; }
 .payment-confirm-copy, .payment-success, .payment-error { font-size: 13px; line-height: 1.45; }
 .payment-success { color: #1f7a38; }
 .payment-error { color: #b42318; }
@@ -321,10 +322,13 @@ h2 span { color: #2da44e; font-family: "DM Mono", monospace; font-style: normal;
   .benefits-grid { gap: 45px; grid-template-columns: 1fr; }
   .manifesto-content { gap: 35px; margin-top: 42px; }
   .section-heading { align-items: start; display: block; }
+  .section-heading > * { min-width: 0; }
   .section-heading h2 { margin-top: 35px; }
   .section-heading p { margin-top: 30px; }
+  .payment-print-note { margin-top: 24px; max-width: 100%; overflow-wrap: anywhere; }
   .spots-layout { gap: 50px; margin-top: 55px; }
-  .jacket-stage { min-height: 470px; }
+  .jacket-stage { min-height: 470px; width: 100%; }
+  .placed-logo { height: 34px; width: 34px; }
   .story-grid { gap: 55px; margin-top: 50px; }
   .story-number { font-size: 80px; }
   .footer-bottom { align-items: start; flex-direction: column; gap: 13px; }
