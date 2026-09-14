@@ -161,6 +161,11 @@ h2 span { color: #2da44e; font-family: "DM Mono", monospace; font-style: normal;
 .social-proof-copy h2 { margin: 0 0 24px; }
 .social-proof-copy h2 span { color: var(--acid); }
 .social-proof-copy p { color: #57606a; line-height: 1.6; max-width: 550px; }
+.proof-note { border-left: 3px solid var(--acid); font-family: "DM Mono", monospace; font-size: 11px; line-height: 1.5; margin-top: 28px; padding-left: 12px; text-transform: uppercase; }
+.confirmed-proof { border: 1px solid #d0d7de; padding: 24px; }
+.confirmed-proof > p { color: #57606a; font-size: 13px; }
+.confirmed-proof-entry { align-items: center; border-top: 1px solid #d0d7de; display: flex; gap: 14px; padding-top: 16px; }
+.confirmed-proof-logo { height: 42px; max-width: 80px; object-fit: contain; width: auto; }
 .social-proof-links { display: flex; gap: 22px; margin: 30px 0; }
 .social-proof-links a { border-bottom: 1px solid var(--acid); color: var(--ink); font: 11px "DM Mono", monospace; padding-bottom: 6px; text-transform: uppercase; }
 .social-formats { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -209,7 +214,7 @@ h2 span { color: #2da44e; font-family: "DM Mono", monospace; font-style: normal;
 @keyframes shirt-fold { 0% { transform: rotateY(0) scaleX(1); } 45% { transform: rotateY(78deg) scaleX(.7); } 100% { transform: rotateY(0) scaleX(1); } }
 .placement-image { cursor: crosshair; touch-action: manipulation; }
 .logo-placements { inset: 0; pointer-events: none; position: absolute; }
-.placed-logo { aspect-ratio: 1; background: #ffffff; border: 2px solid #ffffff; border-radius: 4px; box-shadow: 0 3px 12px rgba(13, 17, 23, .3); height: 42px; max-width: none; object-fit: contain; padding: 3px; position: absolute; transform: translate(-50%, -50%); width: 42px; z-index: 3; }
+.placed-logo { background: #ffffff; border: 2px solid #ffffff; border-radius: 4px; box-shadow: 0 3px 12px rgba(13, 17, 23, .3); height: auto; max-height: 42px; max-width: 64px; object-fit: contain; padding: 3px; position: absolute; transform: translate(-50%, -50%); width: auto; z-index: 3; }
 .payment-confirm-copy, .payment-success, .payment-error { font-size: 13px; line-height: 1.45; }
 .payment-success { color: #1f7a38; }
 .payment-error { color: #b42318; }
@@ -328,7 +333,7 @@ h2 span { color: #2da44e; font-family: "DM Mono", monospace; font-style: normal;
   .payment-print-note { margin-top: 24px; max-width: 100%; overflow-wrap: anywhere; }
   .spots-layout { gap: 50px; margin-top: 55px; }
   .jacket-stage { min-height: 470px; width: 100%; }
-  .placed-logo { height: 34px; width: 34px; }
+  .placed-logo { max-height: 34px; max-width: 52px; }
   .story-grid { gap: 55px; margin-top: 50px; }
   .story-number { font-size: 80px; }
   .footer-bottom { align-items: start; flex-direction: column; gap: 13px; }

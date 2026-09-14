@@ -37,6 +37,7 @@ const paymentOverlay = document.querySelector("#payment-overlay");
 const paymentOverlayContent = document.querySelector("#payment-overlay-content");
 const paymentOverlaySeconds = document.querySelector("#payment-overlay-seconds");
 const logoPlacements = document.querySelector("#logo-placements");
+const confirmedProof = document.querySelector("#confirmed-proof");
 const onlineCount = document.querySelector("#online-count");
 const visitorCount = document.querySelector("#visitor-count");
 const spotsCount = document.querySelector("#spots-count");
@@ -45,8 +46,6 @@ const fundingNote = document.querySelector(".funding-note");
 let activeSpotId = null;
 let bookingScrollY = 0;
 bidAmount.addEventListener("input", () => bidAmount.setCustomValidity(""));
-const paymentApiUrl = window.PAYMENT_API_URL || "https://github-universe-2026-auction.onrender.com";
-const backendTimeoutMs = 30000;
 const legalModal = document.querySelector("#legal-modal");
 const legalTitle = document.querySelector("#legal-title");
 const legalCopy = document.querySelector("#legal-copy");
@@ -251,44 +250,18 @@ document.querySelector("#booking-form").addEventListener("submit", async (event)
   button.disabled = true;
   try {
     const formData = new FormData(form);
-    const email = String(formData.get("email")).trim().toLowerCase();
     const logoFile = formData.get("logo");
     pendingPlacement = {
       spotId: activeSpotId,
       bid,
       file: logoFile instanceof File && logoFile.size > 0 ? logoFile : null,
     };
-    fetch(`${paymentApiUrl}/api/contact-submissions`, {
-      body: JSON.stringify({
-        name: formData.get("name"),
-        brand: formData.get("brand"),
-        email,
-        spotId: activeSpotId,
-        bidUsd: bid,
-      }),
-      headers: { "Content-Type": "application/json" },
-      method: "POST",
-      signal: AbortSignal.timeout(backendTimeoutMs),
-    }).catch((error) => console.error("Email capture request failed:", error));
     if (paymentMethod.value === "bank") {
       const localQuote = { amountInr: Math.round(bid * 100), bankDetails: publicBankDetails };
       const localInstructions = `<div class="payment-rate">Amount due: ₹${localQuote.amountInr.toLocaleString("en-IN")}</div><div class="bank-payment"><div class="sbi-brand"><span class="sbi-logo" aria-hidden="true">SBI</span><div><strong>State Bank of India</strong><small>Bank transfer</small></div></div><p>Send <b>₹${localQuote.amountInr.toLocaleString("en-IN")}</b> using these details:</p><dl><div><dt>Bank</dt><dd>${localQuote.bankDetails.bankName}</dd></div><div><dt>Account holder</dt><dd>${localQuote.bankDetails.accountName}</dd></div><div><dt>Account number</dt><dd>${localQuote.bankDetails.accountNumber}</dd></div><div><dt>IFSC</dt><dd>${localQuote.bankDetails.ifsc}</dd></div></dl></div>`;
       paymentInstructions.innerHTML = localInstructions;
       paymentInstructions.hidden = false;
       showPaymentOverlay(localInstructions);
-      fetch(`${paymentApiUrl}/api/payment-instructions`, {
-        body: JSON.stringify({
-          spotId: activeSpotId,
-          bidUsd: bid,
-          name: formData.get("name"),
-          brand: formData.get("brand"),
-          email: formData.get("email"),
-          paymentMethod: "bank",
-        }),
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-        signal: AbortSignal.timeout(backendTimeoutMs),
-      }).catch((error) => console.error("Payment instruction email request failed:", error));
       return;
     }
     if (paymentMethod.value === "upi") {
@@ -297,48 +270,8 @@ document.querySelector("#booking-form").addEventListener("submit", async (event)
       paymentInstructions.innerHTML = localInstructions;
       paymentInstructions.hidden = false;
       showPaymentOverlay(localInstructions);
-      fetch(`${paymentApiUrl}/api/payment-instructions`, {
-        body: JSON.stringify({
-          spotId: activeSpotId,
-          bidUsd: bid,
-          name: formData.get("name"),
-          brand: formData.get("brand"),
-          email: formData.get("email"),
-          paymentMethod: "upi",
-        }),
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-        signal: AbortSignal.timeout(backendTimeoutMs),
-      }).catch((error) => console.error("Payment instruction email request failed:", error));
       return;
     }
-    const response = await fetch(`${paymentApiUrl}/api/payment-instructions`, {
-      body: JSON.stringify({
-        spotId: activeSpotId,
-        bidUsd: bid,
-        name: formData.get("name"),
-        brand: formData.get("brand"),
-        email: formData.get("email"),
-        paymentMethod: paymentMethod.value,
-      }),
-      headers: { "Content-Type": "application/json" },
-      method: "POST",
-      signal: AbortSignal.timeout(backendTimeoutMs),
-    });
-    const quote = await response.json();
-    if (!response.ok) throw new Error(quote.error || "Unable to email payment instructions.");
-    const emailStatus = quote.sent ? "<p>Payment instructions were emailed securely.</p>" : "";
-    const upiDetails = paymentMethod.value === "upi"
-      ? `<div class="upi-payment"><img src="upi-qr.png" alt="Scan this QR code to pay by UPI" /><div><strong>Pay by UPI</strong><p>Scan or save this QR code, or send <b>₹${quote.amountInr.toLocaleString("en-IN")}</b> to <b>${quote.upiId}</b>.</p></div></div>`
-      : "";
-    const bank = quote.bankDetails || {};
-    const bankDetails = paymentMethod.value === "bank"
-      ? `<div class="bank-payment"><div class="sbi-brand"><span class="sbi-logo" aria-hidden="true">SBI</span><div><strong>State Bank of India</strong><small>Bank transfer</small></div></div><p>Send <b>₹${quote.amountInr.toLocaleString("en-IN")}</b> using these details:</p><dl><div><dt>Bank</dt><dd>${bank.bankName || "State Bank of India"}</dd></div><div><dt>Account holder</dt><dd>${bank.accountName || "Alex Junior Antwi"}</dd></div><div><dt>Account number</dt><dd>${bank.accountNumber || "Contact campaign owner"}</dd></div><div><dt>IFSC</dt><dd>${bank.ifsc || "Contact campaign owner"}</dd></div></dl></div>`
-      : "";
-    const renderedInstructions = `${emailStatus}<div class="payment-rate">Amount due: ₹${quote.amountInr.toLocaleString("en-IN")}</div>${upiDetails || bankDetails}`;
-    paymentInstructions.innerHTML = renderedInstructions;
-    paymentInstructions.hidden = false;
-    showPaymentOverlay(renderedInstructions);
   } catch (error) {
     paymentInstructions.innerHTML = `<div class="payment-rate">Instructions unavailable</div><p>${error.name === "TimeoutError" ? "The payment backend took too long to respond." : error.message}</p><p>Try again after the payment backend is configured.</p>`;
     paymentInstructions.hidden = false;
@@ -383,6 +316,13 @@ function confirmPaymentAndPlaceLogo() {
   logo.style.left = `${zone.x * 100}%`;
   logo.style.top = `${zone.y * 100}%`;
   logoPlacements.appendChild(logo);
+  const proofEntry = document.createElement("div");
+  proofEntry.className = "confirmed-proof-entry";
+  const proofLogo = logo.cloneNode();
+  proofLogo.className = "confirmed-proof-logo";
+  proofEntry.append(proofLogo, document.createTextNode(`${spotId} · payment confirmed`));
+  confirmedProof.querySelector("p")?.remove();
+  confirmedProof.appendChild(proofEntry);
   document.querySelectorAll(`[data-spot="${spotId}"]`).forEach((item) => item.classList.add("sold"));
   claimSpot(spotId, bid);
   paymentOverlayContent.insertAdjacentHTML("beforeend", "<p class=\"payment-success\">Payment marked for review. Your logo is now previewed on the shirt.</p>");
