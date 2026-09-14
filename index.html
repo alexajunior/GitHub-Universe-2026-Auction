@@ -304,7 +304,8 @@
       <form id="booking-form">
         <label>Your name<input required name="name" placeholder="e.g. Aanya Sharma" /></label>
         <label>Brand / project<input required name="brand" placeholder="e.g. Lumen Labs" /></label>
-        <label>Email<input required type="email" name="email" placeholder="you@brand.com" /></label>
+        <label>Email<input required type="email" name="email" placeholder="you@brand.com" /><small id="email-verification-status"></small></label>
+        <label class="verification-code-field" id="verification-code-wrap" hidden>Enter your verification code<input id="verification-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-digit code" /></label>
         <label>Upload your logo<input required type="file" name="logo" accept="image/png,image/jpeg,image/svg+xml" /></label>
         <label>Your bid (USD)<input required id="bid-amount" type="number" name="bid" min="500" step="100" value="500" /></label>
         <label>Payment method

@@ -31,6 +31,10 @@ const modalTitle = document.querySelector("#modal-title");
 const modalDescription = document.querySelector("#modal-description");
 const modalPrice = document.querySelector("#modal-price");
 const bidAmount = document.querySelector("#bid-amount");
+const emailInput = document.querySelector("input[name='email']");
+const verificationCodeWrap = document.querySelector("#verification-code-wrap");
+const verificationCode = document.querySelector("#verification-code");
+const emailVerificationStatus = document.querySelector("#email-verification-status");
 const paymentMethod = document.querySelector("#payment-method");
 const paymentInstructions = document.querySelector("#payment-instructions");
 const paymentOverlay = document.querySelector("#payment-overlay");
@@ -49,6 +53,8 @@ const legalModal = document.querySelector("#legal-modal");
 const legalTitle = document.querySelector("#legal-title");
 const legalCopy = document.querySelector("#legal-copy");
 let paymentOverlayTimer;
+let emailVerified = false;
+let verificationRequestedFor = "";
 const publicBankDetails = {
   bankName: "State Bank of India",
   accountName: "Alex Junior Antwi",
@@ -56,6 +62,14 @@ const publicBankDetails = {
   ifsc: "SBIN0010446",
 };
 const publicUpiId = "8796332176@upi";
+
+emailInput.addEventListener("input", () => {
+  emailVerified = false;
+  verificationRequestedFor = "";
+  verificationCode.value = "";
+  verificationCodeWrap.hidden = true;
+  emailVerificationStatus.textContent = "";
+});
 
 document.querySelectorAll(".code-line").forEach((line, lineIndex) => {
   const text = line.dataset.text || "";
@@ -248,6 +262,36 @@ document.querySelector("#booking-form").addEventListener("submit", async (event)
   button.disabled = true;
   try {
     const formData = new FormData(form);
+    const email = String(formData.get("email")).trim().toLowerCase();
+    if (!emailVerified || verificationRequestedFor !== email) {
+      if (verificationRequestedFor !== email) {
+        const verificationResponse = await fetch(`${paymentApiUrl}/api/email-verification/request`, {
+          body: JSON.stringify({ email }),
+          headers: { "Content-Type": "application/json" },
+          method: "POST",
+          signal: AbortSignal.timeout(10000),
+        });
+        const verificationResult = await verificationResponse.json();
+        if (!verificationResponse.ok) throw new Error(verificationResult.error || "Unable to send verification code.");
+        verificationRequestedFor = email;
+        verificationCodeWrap.hidden = false;
+        emailVerificationStatus.textContent = "Verification code sent.";
+        emailVerificationStatus.className = "verification-success";
+        verificationCode.focus();
+        return;
+      }
+      const verificationResponse = await fetch(`${paymentApiUrl}/api/email-verification/verify`, {
+        body: JSON.stringify({ email, code: verificationCode.value }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+        signal: AbortSignal.timeout(10000),
+      });
+      const verificationResult = await verificationResponse.json();
+      if (!verificationResponse.ok) throw new Error(verificationResult.error || "Email verification failed.");
+      emailVerified = true;
+      emailVerificationStatus.textContent = "Email verified.";
+      emailVerificationStatus.className = "verification-success";
+    }
     if (paymentMethod.value === "bank") {
       const localQuote = { amountInr: Math.round(bid * 100), bankDetails: publicBankDetails };
       const localInstructions = `<div class="payment-rate">Amount due: ₹${localQuote.amountInr.toLocaleString("en-IN")}</div><div class="bank-payment"><div class="sbi-brand"><span class="sbi-logo" aria-hidden="true">SBI</span><div><strong>State Bank of India</strong><small>Bank transfer</small></div></div><p>Send <b>₹${localQuote.amountInr.toLocaleString("en-IN")}</b> using these details:</p><dl><div><dt>Bank</dt><dd>${localQuote.bankDetails.bankName}</dd></div><div><dt>Account holder</dt><dd>${localQuote.bankDetails.accountName}</dd></div><div><dt>Account number</dt><dd>${localQuote.bankDetails.accountNumber}</dd></div><div><dt>IFSC</dt><dd>${localQuote.bankDetails.ifsc}</dd></div></dl></div>`;

@@ -273,6 +273,10 @@ h2 span { color: #2da44e; font-family: "DM Mono", monospace; font-style: normal;
 .booking-modal input { background: transparent; border: 0; border-bottom: 1px solid #bbbcb7; display: block; font: 16px "Space Grotesk"; margin-top: 7px; outline: 0; padding: 8px 0; width: 100%; }
 .booking-modal input[type="file"] { border: 1px dashed #bbbcb7; font-size: 12px; padding: 12px 8px; }
 .booking-modal form small { color: #8a9099; display: block; font-family: "DM Mono", monospace; font-size: 9px; line-height: 1.4; margin-top: 15px; }
+.verification-code-field { border-left: 3px solid var(--acid); padding-left: 12px; }
+.verification-code-field[hidden] { display: none; }
+#email-verification-status { min-height: 1.2em; }
+.verification-success { color: #1f7a38 !important; }
 @media (max-width: 700px) {
   .topbar { height: 68px; padding: 0 6vw; }
   .desktop-nav, .topbar > .button { display: none; }
