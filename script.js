@@ -36,6 +36,8 @@ const paymentInstructions = document.querySelector("#payment-instructions");
 const onlineCount = document.querySelector("#online-count");
 const visitorCount = document.querySelector("#visitor-count");
 const spotsCount = document.querySelector("#spots-count");
+const fundingProgressFill = document.querySelector(".funding-progress-fill");
+const fundingNote = document.querySelector(".funding-note");
 let activeSpotId = null;
 bidAmount.addEventListener("input", () => bidAmount.setCustomValidity(""));
 const paymentApiUrl = window.PAYMENT_API_URL || "http://localhost:8787";
@@ -70,7 +72,9 @@ const policies = {
 let visitors = 1284;
 let online = 12;
 let claimedSpots = 0;
+let paidAmountUsd = 0;
 const claimedSpotIds = new Set();
+const campaignTargetUsd = 30000;
 let auctionSeconds = 2 * 60 * 60 + 14 * 60 + 36;
 const bidValues = Object.fromEntries(Object.entries(spots).map(([key, spot]) => [key, spot.minBid || (key === "back" ? 10000 : 500)]));
 
@@ -238,11 +242,11 @@ document.querySelector("#booking-form").addEventListener("submit", async (event)
     if (!response.ok) throw new Error(quote.error || "Unable to email payment instructions.");
     const emailStatus = quote.sent ? `<strong>Check ${formData.get("email")}</strong><p>Payment instructions were emailed securely.</p>` : "";
     const upiDetails = paymentMethod.value === "upi"
-      ? `<div class="upi-payment"><img src="upi-qr.png" alt="Scan this QR code to pay by UPI" /><div><strong>Pay by UPI</strong><p>Scan or save this QR code, or send <b>₹${quote.amountInr.toLocaleString("en-IN")}</b> to <b>${quote.upiId}</b>.</p><p>Your campaign rate is fixed at ₹100 / USD.</p></div></div>`
+      ? `<div class="upi-payment"><img src="upi-qr.png" alt="Scan this QR code to pay by UPI" /><div><strong>Pay by UPI</strong><p>Scan or save this QR code, or send <b>₹${quote.amountInr.toLocaleString("en-IN")}</b> to <b>${quote.upiId}</b>.</p></div></div>`
       : "";
     paymentInstructions.innerHTML = `<div class="payment-rate">₹${quote.amountInr.toLocaleString("en-IN")} · ₹100 / USD</div>${emailStatus}${upiDetails || "<p>Bank-transfer details are sent to your email after approval.</p>"}`;
     paymentInstructions.hidden = false;
-    claimSpot(activeSpotId);
+    claimSpot(activeSpotId, bid);
   } catch (error) {
     paymentInstructions.innerHTML = `<div class="payment-rate">Email not sent</div><p>${error.name === "TimeoutError" ? "The payment backend took too long to respond." : error.message}</p><p>Try again after the payment backend is configured.</p>`;
     paymentInstructions.hidden = false;
@@ -252,10 +256,15 @@ document.querySelector("#booking-form").addEventListener("submit", async (event)
   }
 });
 
-function claimSpot(spotId) {
+function claimSpot(spotId, amountUsd) {
   if (!claimedSpotIds.has(spotId)) {
     claimedSpotIds.add(spotId);
     claimedSpots += 1;
+    paidAmountUsd += amountUsd;
     spotsCount.textContent = claimedSpots;
+    const progress = Math.min(100, (paidAmountUsd / campaignTargetUsd) * 100);
+    fundingProgressFill.style.width = `${progress}%`;
+    fundingProgressFill.parentElement.setAttribute("aria-valuenow", progress.toFixed(1));
+    fundingNote.textContent = `${progress.toFixed(1)}% paid · confirmed payments only`;
   }
 }

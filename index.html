@@ -86,10 +86,10 @@
         <section class="funding section-pad" aria-label="Fundraising progress">
           <div class="funding-code"><span>$</span> campaign.target = <strong>"$30,000"</strong>;</div>
           <div class="funding-label">fundraising progress</div>
-          <div class="funding-progress" role="progressbar" aria-label="Fundraising progress">
-            <div class="funding-progress-fill" style="width: 25%"></div>
+          <div class="funding-progress" role="progressbar" aria-label="Fundraising progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div class="funding-progress-fill" style="width: 0%"></div>
           </div>
-          <div class="funding-note">25% funded · every placement moves the work forward</div>
+          <div class="funding-note">0% paid · confirmed payments only</div>
         </section>
 
         <section class="universe-facts section-pad" id="universe">
@@ -314,7 +314,6 @@
           </select>
         </label>
         <button class="button button-accent" type="submit">Show payment instructions <span>↗</span></button>
-        <small>Payment is made manually in INR at the campaign rate of ₹100 per USD. No card checkout is used.</small>
         <div class="payment-instructions" id="payment-instructions" hidden></div>
       </form>
     </dialog>
